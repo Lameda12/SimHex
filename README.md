@@ -2,8 +2,6 @@
 
 A 3D hex-grid home simulation where autonomous robots (HEX-01 through HEX-05) manage needs, complete tasks, and move around a house with a day/night cycle. Built with **Three.js** and **Vite**.
 
-![HEX Home - Robot Simulation](https://github.com/Lameda12/SimHex/raw/main/screenshot.png)
-
 ## Features
 
 - **Hex-based house** — Rooms (kitchen, living room, bathroom, garden, etc.) and walls built from hex tiles
