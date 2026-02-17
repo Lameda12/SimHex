@@ -1,30 +1,50 @@
-import { updateIdleBob, updateWorkingAnim } from '../RobotAnimations.js';
+import { updateOrbitBob, updateWorkingAnim } from '../RobotAnimations.js';
+import { EventBus } from '../../utils/EventBus.js';
 
 export const WorkingState = {
   name: 'working',
 
   enter(robot) {
-    robot.workTimer = robot.currentTask ? robot.currentTask.duration : 20;
+    robot.workTimer = robot.currentMission ? robot.currentMission.duration : 30;
   },
 
   update(robot, dt, elapsed) {
-    updateIdleBob(robot, elapsed);
+    // Stay in orbit while working
+    updateOrbitBob(robot, elapsed);
     updateWorkingAnim(robot, elapsed);
 
-    // Convert dt to in-game minutes
-    const simMinutes = dt * robot.simulation.clock.speedMultiplier * 2;
-    robot.workTimer -= simMinutes;
+    // Decrement timer in sim-days
+    const simDays = dt * robot.simulation.clock.speedMultiplier * 0.5;
+    robot.workTimer -= simDays;
 
     if (robot.workTimer <= 0) {
-      // Task complete
-      if (robot.currentTask) {
-        robot.currentTask.completed = true;
-        robot.currentTask.assignedTo = null;
-        if (robot.simulation && robot.simulation.taskQueue) {
-          robot.simulation.taskQueue.completeTask(robot.currentTask);
+      // Mission complete
+      if (robot.currentMission) {
+        robot.currentMission.completed = true;
+        robot.missionsCompleted++;
+
+        // Check if it's a base-building mission
+        if (robot.currentMission.type === 'build_base' || robot.currentMission.type === 'establish_colony') {
+          if (robot.currentPlanet) {
+            robot.currentPlanet.addBase();
+            EventBus.emit('base-built', {
+              planetId: robot.currentPlanet.id,
+              missionType: robot.currentMission.type,
+            });
+          }
         }
+
+        if (robot.simulation && robot.simulation.missionQueue) {
+          robot.simulation.missionQueue.completeMission(robot.currentMission);
+        }
+
+        EventBus.emit('mission-completed', {
+          mission: robot.currentMission,
+          robotName: robot.name,
+          planetId: robot.currentPlanet ? robot.currentPlanet.id : null,
+        });
       }
-      robot.currentTask = null;
+      robot.currentMission = null;
       robot.stateMachine.setState('idle');
     }
   },

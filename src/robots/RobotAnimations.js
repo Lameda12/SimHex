@@ -1,93 +1,78 @@
+import * as THREE from 'three';
 import { lerp } from '../utils/MathUtils.js';
-import { axialToWorld } from '../hex/HexUtils.js';
 
-// Idle bobbing animation
-export function updateIdleBob(robot, elapsed) {
-  const bobAmount = Math.sin(elapsed * 2 + robot.bobOffset) * 0.04;
-  robot.mesh.position.y = bobAmount;
+const _targetPos = new THREE.Vector3();
+
+// Gentle bobbing while orbiting a planet
+export function updateOrbitBob(robot, elapsed) {
+  if (!robot.currentPlanet) return;
+
+  const planet = robot.currentPlanet;
+  const planetPos = planet.getWorldPosition();
+  const orbitOffset = planet.definition.radius + 0.6;
+  const angle = elapsed * 0.8 + robot.orbitPhase;
+
+  robot.position.set(
+    planetPos.x + Math.cos(angle) * orbitOffset,
+    planetPos.y + Math.sin(elapsed * 1.5 + robot.orbitPhase) * 0.1,
+    planetPos.z + Math.sin(angle) * orbitOffset
+  );
 }
 
-// Smooth movement toward next path waypoint
-export function updateMovement(robot, dt) {
-  if (!robot.path || robot.path.length === 0) return true; // done
+// Interplanetary flight - smooth interpolation toward moving target
+export function updateFlight(robot, dt) {
+  if (!robot.targetPlanet) return true;
 
-  const target = robot.path[0];
-  const targetWorld = axialToWorld(target.q, target.r);
-  const tx = targetWorld.x;
-  const tz = targetWorld.z;
+  const speed = robot.flightSpeed * dt * robot.simulation.clock.speedMultiplier;
 
-  const dx = tx - robot.worldX;
-  const dz = tz - robot.worldZ;
-  const dist = Math.sqrt(dx * dx + dz * dz);
+  // Get current target position (planet moves during flight)
+  _targetPos.copy(robot.targetPlanet.getWorldPosition());
 
-  if (dist < 0.05) {
-    // Arrived at waypoint
-    robot.worldX = tx;
-    robot.worldZ = tz;
-    robot.q = target.q;
-    robot.r = target.r;
-    robot.path.shift();
+  const direction = _targetPos.clone().sub(robot.position);
+  const dist = direction.length();
 
-    if (robot.path.length === 0) return true; // path complete
-    return false;
+  if (dist < robot.targetPlanet.definition.radius + 0.8) {
+    return true; // arrived
   }
 
-  // Move toward target
-  const speed = robot.speed * dt;
-  const moveX = (dx / dist) * Math.min(speed, dist);
-  const moveZ = (dz / dist) * Math.min(speed, dist);
-
-  robot.worldX += moveX;
-  robot.worldZ += moveZ;
+  direction.normalize().multiplyScalar(Math.min(speed, dist));
+  robot.position.add(direction);
 
   // Face movement direction
-  const angle = Math.atan2(dx, dz);
-  robot.mesh.rotation.y = lerp(robot.mesh.rotation.y, angle, 0.15);
-
-  // Slight forward lean while moving
-  robot.mesh.rotation.x = lerp(robot.mesh.rotation.x, 0.08, 0.1);
+  const angle = Math.atan2(direction.x, direction.z);
+  robot.mesh.rotation.y = lerp(robot.mesh.rotation.y, angle, 0.1);
 
   return false;
 }
 
-// Reset lean when idle
-export function resetLean(robot, dt) {
-  robot.mesh.rotation.x = lerp(robot.mesh.rotation.x, 0, 0.1);
+// Toggle thruster visual
+export function setThrusterActive(robot, active) {
+  const thruster = robot.mesh.getObjectByName('thruster');
+  if (!thruster) return;
+  thruster.material.emissiveIntensity = active ? 1.5 : 0;
+  thruster.material.opacity = active ? 0.8 : 0;
 }
 
-// Working animation - arm rotation
+// Dish rotation during work
 export function updateWorkingAnim(robot, elapsed) {
-  const leftArm = robot.mesh.getObjectByName('left-arm');
-  const rightArm = robot.mesh.getObjectByName('right-arm');
-  if (leftArm) {
-    leftArm.rotation.z = Math.sin(elapsed * 4 + robot.bobOffset) * 0.3;
+  const dish = robot.mesh.getObjectByName('dish');
+  if (dish) {
+    dish.rotation.y = elapsed * 2;
   }
-  if (rightArm) {
-    rightArm.rotation.z = -Math.sin(elapsed * 4 + robot.bobOffset) * 0.3;
+  const leftPanel = robot.mesh.getObjectByName('left-panel');
+  const rightPanel = robot.mesh.getObjectByName('right-panel');
+  if (leftPanel) {
+    leftPanel.rotation.z = Math.sin(elapsed * 0.5) * 0.1;
+  }
+  if (rightPanel) {
+    rightPanel.rotation.z = -Math.sin(elapsed * 0.5) * 0.1;
   }
 }
 
-// Sleeping animation - dim eyes
-export function updateSleepAnim(robot, elapsed) {
-  const leftEye = robot.mesh.getObjectByName('left-eye');
-  const rightEye = robot.mesh.getObjectByName('right-eye');
-  const dimFactor = 0.1 + Math.sin(elapsed * 0.5) * 0.05;
-  if (leftEye) leftEye.material.emissiveIntensity = dimFactor;
-  if (rightEye) rightEye.material.emissiveIntensity = dimFactor;
-}
-
-// Wake up eyes
-export function resetEyes(robot) {
-  const leftEye = robot.mesh.getObjectByName('left-eye');
-  const rightEye = robot.mesh.getObjectByName('right-eye');
-  if (leftEye) leftEye.material.emissiveIntensity = 1.0;
-  if (rightEye) rightEye.material.emissiveIntensity = 1.0;
-}
-
-// Reset arm positions
-export function resetArms(robot) {
-  const leftArm = robot.mesh.getObjectByName('left-arm');
-  const rightArm = robot.mesh.getObjectByName('right-arm');
-  if (leftArm) leftArm.rotation.z = 0;
-  if (rightArm) rightArm.rotation.z = 0;
+// Launch sequence - rise from planet
+export function updateLaunch(robot, progress) {
+  if (!robot.launchOrigin) return;
+  const height = progress * 2.0;
+  robot.position.copy(robot.launchOrigin);
+  robot.position.y += height;
 }

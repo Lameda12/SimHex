@@ -1,82 +1,100 @@
 import * as THREE from 'three';
-import { createHexPrism } from '../hex/HexMeshFactory.js';
-import { HEX_HEIGHT } from '../constants.js';
 
 export function createRobotMesh(accentColor) {
   const group = new THREE.Group();
 
-  // Hover disk (flat glowing hex at ground level)
-  const hoverDisk = createHexPrism(0.25, 0.02, 0x111118, accentColor, 0.5);
-  hoverDisk.position.y = HEX_HEIGHT + 0.02;
-  hoverDisk.name = 'hover-disk';
-  group.add(hoverDisk);
-
-  // Body - hex prism
-  const body = createHexPrism(0.18, 0.4, 0x222233, accentColor, 0.15);
-  body.position.y = HEX_HEIGHT + 0.12;
+  // Main body - cylinder bus
+  const bodyGeo = new THREE.CylinderGeometry(0.15, 0.18, 0.5, 8);
+  const bodyMat = new THREE.MeshStandardMaterial({
+    color: 0x333344,
+    metalness: 0.6,
+    roughness: 0.3,
+  });
+  const body = new THREE.Mesh(bodyGeo, bodyMat);
   body.name = 'body';
   group.add(body);
 
-  // Head - smaller hex prism, slightly rotated
-  const head = createHexPrism(0.12, 0.15, 0x333344, accentColor, 0.2);
-  head.position.y = HEX_HEIGHT + 0.55;
-  head.rotation.y = Math.PI / 6; // rotated 30 degrees for visual interest
-  head.name = 'head';
-  group.add(head);
-
-  // Eyes - two small emissive spheres
-  const eyeGeo = new THREE.SphereGeometry(0.025, 8, 8);
-  const eyeMat = new THREE.MeshStandardMaterial({
+  // Accent ring around body
+  const ringGeo = new THREE.TorusGeometry(0.17, 0.015, 8, 16);
+  const ringMat = new THREE.MeshStandardMaterial({
     color: accentColor,
     emissive: accentColor,
-    emissiveIntensity: 1.0,
+    emissiveIntensity: 0.5,
   });
-  const leftEye = new THREE.Mesh(eyeGeo, eyeMat);
-  leftEye.position.set(-0.05, HEX_HEIGHT + 0.65, 0.1);
-  leftEye.name = 'left-eye';
-  group.add(leftEye);
+  const ring = new THREE.Mesh(ringGeo, ringMat);
+  ring.rotation.x = Math.PI / 2;
+  ring.position.y = 0.05;
+  group.add(ring);
 
-  const rightEye = new THREE.Mesh(eyeGeo, eyeMat);
-  rightEye.position.set(0.05, HEX_HEIGHT + 0.65, 0.1);
-  rightEye.name = 'right-eye';
-  group.add(rightEye);
+  // Solar panels - two thin rectangles
+  const panelGeo = new THREE.BoxGeometry(0.6, 0.02, 0.2);
+  const panelMat = new THREE.MeshStandardMaterial({
+    color: 0x224488,
+    metalness: 0.8,
+    roughness: 0.2,
+  });
 
-  // Arms - thin hex prisms
-  const armGeo = createHexPrism(0.03, 0.25, 0x333344);
-  const leftArm = armGeo.clone();
-  leftArm.position.set(-0.22, HEX_HEIGHT + 0.25, 0);
-  leftArm.name = 'left-arm';
-  group.add(leftArm);
+  const leftPanel = new THREE.Mesh(panelGeo, panelMat);
+  leftPanel.position.set(-0.4, 0.05, 0);
+  leftPanel.name = 'left-panel';
+  group.add(leftPanel);
 
-  const rightArm = armGeo.clone();
-  rightArm.position.set(0.22, HEX_HEIGHT + 0.25, 0);
-  rightArm.name = 'right-arm';
-  group.add(rightArm);
+  const rightPanel = new THREE.Mesh(panelGeo, panelMat);
+  rightPanel.position.set(0.4, 0.05, 0);
+  rightPanel.name = 'right-panel';
+  group.add(rightPanel);
 
-  // Antenna
-  const antennaGeo = new THREE.CylinderGeometry(0.008, 0.008, 0.15, 6);
-  const antennaMat = new THREE.MeshStandardMaterial({ color: 0x888899 });
-  const antenna = new THREE.Mesh(antennaGeo, antennaMat);
-  antenna.position.y = HEX_HEIGHT + 0.77;
-  group.add(antenna);
+  // Dish antenna on top
+  const dishGeo = new THREE.ConeGeometry(0.1, 0.08, 16, 1, true);
+  const dishMat = new THREE.MeshStandardMaterial({
+    color: 0xccccdd,
+    metalness: 0.7,
+    roughness: 0.2,
+    side: THREE.DoubleSide,
+  });
+  const dish = new THREE.Mesh(dishGeo, dishMat);
+  dish.position.y = 0.3;
+  dish.rotation.x = Math.PI;
+  dish.name = 'dish';
+  group.add(dish);
+
+  // Antenna mast
+  const mastGeo = new THREE.CylinderGeometry(0.008, 0.008, 0.12, 6);
+  const mastMat = new THREE.MeshStandardMaterial({ color: 0x888899 });
+  const mast = new THREE.Mesh(mastGeo, mastMat);
+  mast.position.y = 0.36;
+  group.add(mast);
 
   // Antenna tip
-  const tipGeo = new THREE.SphereGeometry(0.02, 8, 8);
+  const tipGeo = new THREE.SphereGeometry(0.015, 8, 8);
   const tipMat = new THREE.MeshStandardMaterial({
     color: accentColor,
     emissive: accentColor,
     emissiveIntensity: 0.8,
   });
   const tip = new THREE.Mesh(tipGeo, tipMat);
-  tip.position.y = HEX_HEIGHT + 0.85;
+  tip.position.y = 0.42;
   group.add(tip);
 
-  // Point light from the robot (subtle glow)
-  const glow = new THREE.PointLight(accentColor, 0.3, 2);
-  glow.position.y = HEX_HEIGHT + 0.4;
+  // Thruster at bottom (emissive, toggleable)
+  const thrusterGeo = new THREE.SphereGeometry(0.06, 8, 8);
+  const thrusterMat = new THREE.MeshStandardMaterial({
+    color: accentColor,
+    emissive: accentColor,
+    emissiveIntensity: 0,
+    transparent: true,
+    opacity: 0,
+  });
+  const thruster = new THREE.Mesh(thrusterGeo, thrusterMat);
+  thruster.position.y = -0.3;
+  thruster.name = 'thruster';
+  group.add(thruster);
+
+  // Point light glow
+  const glow = new THREE.PointLight(accentColor, 0.4, 3);
+  glow.position.y = 0;
   group.add(glow);
 
-  group.castShadow = true;
   group.userData.accentColor = accentColor;
   return group;
 }

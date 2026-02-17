@@ -1,21 +1,21 @@
-import { updateMovement, updateIdleBob } from '../RobotAnimations.js';
+import { updateFlight, setThrusterActive } from '../RobotAnimations.js';
 
 export const MovingState = {
   name: 'moving',
 
-  enter(robot) {},
+  enter(robot) {
+    setThrusterActive(robot, true);
+  },
 
   update(robot, dt, elapsed) {
-    updateIdleBob(robot, elapsed);
-    const arrived = updateMovement(robot, dt);
+    const arrived = updateFlight(robot, dt);
 
     if (arrived) {
-      // Transition to target state
-      const targetState = robot.targetState || 'idle';
-      robot.targetState = null;
-      robot.stateMachine.setState(targetState);
+      robot.stateMachine.setState('arriving');
     }
   },
 
-  exit(robot) {},
+  exit(robot) {
+    setThrusterActive(robot, false);
+  },
 };

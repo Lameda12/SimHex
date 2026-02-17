@@ -5,7 +5,7 @@
 }
 
 :root {
-  --bg-dark: #0a0a0f;
+  --bg-dark: #020208;
   --bg-panel: rgba(10, 10, 18, 0.88);
   --border-glow: rgba(0, 229, 255, 0.3);
   --accent-teal: #00e5ff;
@@ -62,7 +62,7 @@ canvas#app {
   padding: 16px;
 }
 
-/* Robot Status Panel - Left side */
+/* Fleet Panel - Left side */
 .robot-panel {
   position: fixed;
   left: 16px;
@@ -71,6 +71,8 @@ canvas#app {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
 }
 
 .robot-card {
@@ -115,31 +117,33 @@ canvas#app {
 }
 
 .robot-card .robot-state {
-  font-size: 10px;
+  font-size: 9px;
   color: var(--text-dim);
   text-transform: uppercase;
   letter-spacing: 1px;
   margin-left: auto;
 }
 
-.needs-bars {
+.probe-info {
   display: flex;
   flex-direction: column;
   gap: 3px;
-}
-
-.need-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.need-label {
-  font-size: 9px;
+  font-size: 10px;
   color: var(--text-dim);
-  width: 12px;
-  text-align: center;
+}
+
+.probe-location {
+  color: var(--accent-teal);
   font-family: var(--font-mono);
+  font-size: 10px;
+}
+
+.probe-missions {
+  font-size: 9px;
+}
+
+.probe-progress-row {
+  margin-top: 3px;
 }
 
 .need-bar {
@@ -169,7 +173,7 @@ canvas#app {
 
 .time-display {
   font-family: var(--font-mono);
-  font-size: 28px;
+  font-size: 22px;
   font-weight: 300;
   letter-spacing: 2px;
   color: var(--accent-teal);
@@ -211,13 +215,13 @@ canvas#app {
   color: var(--accent-teal);
 }
 
-/* Task Queue Panel - Right side */
+/* Mission Control Panel - Right side */
 .task-panel {
   position: fixed;
   right: 16px;
   top: 80px;
-  width: 200px;
-  max-height: 400px;
+  width: 240px;
+  max-height: calc(100vh - 200px);
   overflow-y: auto;
 }
 
@@ -227,6 +231,46 @@ canvas#app {
   letter-spacing: 2px;
   color: var(--text-dim);
   margin-bottom: 8px;
+}
+
+.mission-dispatch {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.mission-select {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 5px 8px;
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+}
+
+.mission-select:focus {
+  border-color: var(--accent-teal);
+}
+
+.mission-select option {
+  background: #0a0a12;
+  color: var(--text-primary);
+}
+
+.mission-launch-btn {
+  background: rgba(0, 229, 255, 0.1);
+  border-color: var(--accent-teal);
+  color: var(--accent-teal);
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+.mission-launch-btn:hover {
+  background: rgba(0, 229, 255, 0.25);
 }
 
 .task-item {
@@ -252,6 +296,91 @@ canvas#app {
   font-size: 9px;
   color: var(--text-dim);
   font-family: var(--font-mono);
+}
+
+/* Civilization Panel - Bottom left */
+.civ-panel {
+  position: fixed;
+  bottom: 16px;
+  left: 16px;
+  width: 220px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.civ-panel h3 {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+}
+
+.civ-stage {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 5px 0;
+  opacity: 0.35;
+}
+
+.civ-stage.complete {
+  opacity: 1;
+}
+
+.civ-stage.current {
+  opacity: 1;
+}
+
+.civ-stage-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid var(--text-dim);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.civ-stage.complete .civ-stage-dot {
+  background: var(--accent-teal);
+  border-color: var(--accent-teal);
+  box-shadow: 0 0 6px var(--accent-teal);
+}
+
+.civ-stage.current .civ-stage-dot {
+  background: var(--accent-amber);
+  border-color: var(--accent-amber);
+  box-shadow: 0 0 8px var(--accent-amber);
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { box-shadow: 0 0 6px var(--accent-amber); }
+  50% { box-shadow: 0 0 14px var(--accent-amber); }
+}
+
+.civ-stage-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.civ-stage-desc {
+  font-size: 9px;
+  color: var(--text-dim);
+}
+
+.civ-stats {
+  margin-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 8px;
+}
+
+.stat-row {
+  font-size: 10px;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  padding: 2px 0;
 }
 
 /* Controls Panel - Bottom right */
@@ -318,4 +447,54 @@ canvas#app {
   letter-spacing: 1px;
   display: block;
   margin-top: 2px;
+}
+
+/* Toast notifications */
+.toast-container {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 20;
+}
+
+.toast {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-glow);
+  padding: 10px 20px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  text-align: center;
+  animation: toast-in 0.3s ease-out;
+  backdrop-filter: blur(8px);
+}
+
+.toast-stage {
+  border-color: var(--accent-amber);
+  color: var(--accent-amber);
+  box-shadow: 0 0 20px rgba(255, 171, 0, 0.3);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.toast-mission {
+  border-color: var(--accent-teal);
+  color: var(--accent-teal);
+  box-shadow: 0 0 12px rgba(0, 229, 255, 0.2);
+}
+
+.toast-fade {
+  opacity: 0;
+  transition: opacity 0.5s;
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
